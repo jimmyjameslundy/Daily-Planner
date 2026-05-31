@@ -7,49 +7,31 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   
-  <!-- Better PWA Setup -->
+  <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#6366f1">
 </head>
-<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-200">
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-200 min-h-screen">
   <div class="max-w-7xl mx-auto p-6">
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex justify-between items-center mb-8">
       <h1 class="text-4xl font-bold text-indigo-600">Daily Drive</h1>
-      <button onclick="installPWA()" class="px-6 py-3 bg-indigo-600 text-white rounded-2xl flex items-center gap-2 hover:bg-indigo-700">
+      <button onclick="showInstallInstructions()" 
+              class="px-6 py-3 bg-indigo-600 text-white rounded-2xl flex items-center gap-2 hover:bg-indigo-700">
         <i class="fas fa-download"></i> Install App
       </button>
     </div>
 
-    <!-- Your existing app content goes here -->
-    <div class="text-center text-slate-400 text-sm mt-12">
-      All data saved automatically • Works offline
+    <div class="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow">
+      <h2 class="text-2xl font-semibold mb-6">Your Daily Planner</h2>
+      <p class="text-slate-600 dark:text-slate-400">The full planner features will be added back once the PWA is working reliably.</p>
+      <p class="mt-8 text-sm text-slate-500">Data saves automatically in your browser.</p>
     </div>
   </div>
 
   <script>
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      deferredPrompt = e;
-    });
-
-    function installPWA() {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choice) => {
-          if (choice.outcome === 'accepted') {
-            console.log('App installed');
-          }
-          deferredPrompt = null;
-        });
-      } else {
-        alert("To install:\n\n• On Android/Chrome: Tap ⋮ → 'Install app'\n• On iPhone: Tap Share → 'Add to Home Screen'");
-      }
+    function showInstallInstructions() {
+      alert("On Laptop Chrome:\n\n1. Click the 3-dot menu (⋮) in the top right\n2. Go to 'Save and share'\n3. Click 'Install page as app'\n\nThen click Install.");
     }
-
-    // Auto trigger install prompt after load
-    setTimeout(() => {
-      if (deferredPrompt) installPWA();
-    }, 1500);
   </script>
 </body>
 </html>
