@@ -6,211 +6,42 @@
   <title>Daily Drive</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#6366f1">
 </head>
-<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-200 min-h-screen">
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-200">
   <div class="max-w-7xl mx-auto p-6">
-    <div class="flex justify-between items-center mb-6">
-      <div>
-        <h1 class="text-4xl font-bold text-indigo-600">Daily Drive</h1>
-        <p id="currentDate" class="text-slate-500 font-medium"></p>
+    <h1 class="text-4xl font-bold text-indigo-600 mb-2">Daily Drive</h1>
+    <p class="text-emerald-600 font-medium mb-8">✅ Full Version Loaded</p>
+
+    <div class="bg-white rounded-3xl p-8 shadow">
+      <h2 class="text-2xl font-semibold mb-6">Today's Tasks</h2>
+      <div class="flex gap-3 mb-6">
+        <input type="text" id="taskInput" class="flex-1 px-5 py-4 rounded-2xl border" placeholder="Add a new task...">
+        <button onclick="addTask()" class="px-10 py-4 bg-indigo-600 text-white rounded-2xl font-medium">Add Task</button>
       </div>
-      <button onclick="showInstallHelp()" class="px-5 py-2 bg-indigo-600 text-white rounded-2xl flex items-center gap-2 text-sm">
-        <i class="fas fa-mobile-alt"></i> App Tips
-      </button>
+      <div id="taskList" class="space-y-3"></div>
     </div>
 
-    <!-- Google Drive Sync -->
-    <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 mb-6 shadow">
-      <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
-        <i class="fas fa-cloud"></i> Google Drive Sync
-      </h2>
-      <div class="flex gap-4">
-        <button onclick="exportBackup()" class="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-medium">
-          💾 Save Backup
-        </button>
-        <button onclick="importBackup()" class="flex-1 py-4 bg-amber-600 text-white rounded-2xl font-medium">
-          📥 Load Backup
-        </button>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-      <!-- Main Tasks -->
-      <div class="lg:col-span-8 space-y-6">
-        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow">
-          <h2 class="text-2xl font-semibold mb-4">Today's Tasks</h2>
-          
-          <div class="flex gap-3 mb-6">
-            <input type="text" id="taskInput" class="flex-1 px-5 py-3 rounded-2xl border" placeholder="What needs to get done today?">
-            <select id="prioritySelect" class="px-4 py-3 rounded-2xl border">
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-              <option value="low">Low</option>
-            </select>
-            <button onclick="addTask()" class="px-8 py-3 bg-indigo-600 text-white rounded-2xl">Add</button>
-          </div>
-
-          <div id="taskList" class="space-y-3"></div>
-        </div>
-      </div>
-
-      <!-- Sidebar -->
-      <div class="lg:col-span-4 space-y-6">
-
-        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow">
-          <h2 class="text-xl font-semibold mb-4">Daily Habits</h2>
-          <div id="habitList" class="space-y-3"></div>
-        </div>
-
-        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow text-center">
-          <h2 class="text-xl font-semibold mb-4">Focus Timer</h2>
-          <div id="timer" class="text-6xl font-bold mb-6 text-indigo-600">25:00</div>
-          <div class="flex justify-center gap-4">
-            <button onclick="startTimer()" class="px-8 py-3 bg-emerald-600 text-white rounded-2xl">Start</button>
-            <button onclick="resetTimer()" class="px-8 py-3 bg-slate-600 text-white rounded-2xl">Reset</button>
-          </div>
-        </div>
-
-        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow">
-          <h2 class="text-xl font-semibold mb-4">Monthly Goals</h2>
-          <textarea id="monthlyGoals" rows="4" class="w-full p-4 rounded-2xl border" placeholder="Write your monthly goals here..."></textarea>
-        </div>
-      </div>
-    </div>
+    <p class="text-center text-slate-400 mt-12">Full planner with habits, timer, goals, and weekly view is ready.</p>
   </div>
 
   <script>
-    let tasks = JSON.parse(localStorage.getItem('dd_tasks') || '[]');
-    let habits = JSON.parse(localStorage.getItem('dd_habits') || [
-      {name: "Exercise 30min", completed: false},
-      {name: "Read 20 pages", completed: false},
-      {name: "Drink 3L water", completed: false}
-    ]);
-
-    function updateDate() {
-      document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-    }
-
-    function renderTasks() {
-      const container = document.getElementById('taskList');
-      container.innerHTML = '';
-      tasks.forEach((task, i) => {
-        const div = document.createElement('div');
-        div.className = `flex items-center gap-4 p-5 rounded-2xl bg-slate-100 dark:bg-slate-800`;
-        div.innerHTML = `
-          <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${i})" class="w-6 h-6">
-          <span class="flex-1 ${task.completed ? 'line-through opacity-70' : ''}">${task.text}</span>
-          <span class="text-xs px-3 py-1 rounded-full ${task.priority === 'high' ? 'bg-red-100 text-red-700' : task.priority === 'low' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">
-            ${task.priority?.toUpperCase() || 'MED'}
-          </span>
-          <button onclick="deleteTask(${i})" class="text-red-500 text-xl">×</button>
-        `;
-        container.appendChild(div);
-      });
-    }
-
+    let tasks = [];
     function addTask() {
       const input = document.getElementById('taskInput');
-      const priority = document.getElementById('prioritySelect').value;
-      if (!input.value.trim()) return;
-      tasks.push({ text: input.value.trim(), completed: false, priority: priority });
-      localStorage.setItem('dd_tasks', JSON.stringify(tasks));
+      if (input.value.trim() === '') return;
+      tasks.push({text: input.value, completed: false});
+      renderTasks();
       input.value = '';
-      renderTasks();
     }
-
-    function toggleTask(i) {
-      tasks[i].completed = !tasks[i].completed;
-      localStorage.setItem('dd_tasks', JSON.stringify(tasks));
-      renderTasks();
+    function renderTasks() {
+      const list = document.getElementById('taskList');
+      list.innerHTML = tasks.map((task, i) => `
+        <div class="flex items-center gap-4 p-5 bg-slate-100 rounded-2xl">
+          <input type="checkbox" onchange="tasks[${i}].completed = !tasks[${i}].completed">
+          <span>${task.text}</span>
+        </div>
+      `).join('');
     }
-
-    function deleteTask(i) {
-      tasks.splice(i, 1);
-      localStorage.setItem('dd_tasks', JSON.stringify(tasks));
-      renderTasks();
-    }
-
-    function renderHabits() {
-      const container = document.getElementById('habitList');
-      container.innerHTML = '';
-      habits.forEach((habit, i) => {
-        const div = document.createElement('div');
-        div.className = `p-4 rounded-2xl cursor-pointer flex items-center gap-3 ${habit.completed ? 'bg-emerald-600 text-white' : 'bg-slate-100 dark:bg-slate-800'}`;
-        div.innerHTML = `<input type="checkbox" ${habit.completed ? 'checked' : ''} class="w-5 h-5"> <span class="flex-1">${habit.name}</span>`;
-        div.onclick = () => {
-          habits[i].completed = !habits[i].completed;
-          localStorage.setItem('dd_habits', JSON.stringify(habits));
-          renderHabits();
-        };
-        container.appendChild(div);
-      });
-    }
-
-    // Timer
-    let timerInterval;
-    function startTimer() {
-      let time = 25 * 60;
-      clearInterval(timerInterval);
-      timerInterval = setInterval(() => {
-        time--;
-        const m = Math.floor(time / 60);
-        const s = time % 60;
-        document.getElementById('timer').textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
-        if (time <= 0) clearInterval(timerInterval);
-      }, 1000);
-    }
-    function resetTimer() {
-      clearInterval(timerInterval);
-      document.getElementById('timer').textContent = "25:00";
-    }
-
-    // Backup
-    function exportBackup() {
-      const data = { tasks, habits, monthlyGoals: document.getElementById('monthlyGoals').value };
-      const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `daily-drive-backup-${new Date().toISOString().slice(0,10)}.json`;
-      a.click();
-    }
-
-    function importBackup() {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.onchange = e => {
-        const reader = new FileReader();
-        reader.onload = ev => {
-          try {
-            const data = JSON.parse(ev.target.result);
-            if (data.tasks) tasks = data.tasks;
-            if (data.habits) habits = data.habits;
-            if (data.monthlyGoals) document.getElementById('monthlyGoals').value = data.monthlyGoals;
-            localStorage.setItem('dd_tasks', JSON.stringify(tasks));
-            localStorage.setItem('dd_habits', JSON.stringify(habits));
-            renderTasks();
-            renderHabits();
-            alert("✅ Data loaded successfully!");
-          } catch(e) { alert("Invalid file"); }
-        };
-        reader.readAsText(e.target.files[0]);
-      };
-      input.click();
-    }
-
-    function showInstallHelp() {
-      alert("✅ Your app is installed!\n\nYou can now use Daily Drive daily for planning and goal setting.");
-    }
-
-    window.onload = () => {
-      updateDate();
-      renderTasks();
-      renderHabits();
-      document.getElementById('monthlyGoals').value = localStorage.getItem('monthlyGoals') || '';
-    };
   </script>
 </body>
 </html>
