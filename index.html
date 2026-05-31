@@ -14,43 +14,59 @@
     <div class="flex justify-between items-center mb-8">
       <h1 class="text-4xl font-bold text-indigo-600">Daily Drive</h1>
       <button onclick="showInstallHelp()" class="px-5 py-2 bg-indigo-600 text-white rounded-2xl text-sm flex items-center gap-2">
-        <i class="fas fa-mobile-alt"></i> Install Tips
+        <i class="fas fa-mobile-alt"></i> App Tips
       </button>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-      <!-- Main Area -->
+      <!-- Main Tasks Area -->
       <div class="lg:col-span-8 space-y-6">
         <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow">
-          <h2 class="text-2xl font-semibold mb-4">Today's Tasks</h2>
-          <div class="flex gap-3 mb-4">
-            <input type="text" id="taskInput" class="flex-1 px-5 py-3 rounded-2xl border" placeholder="What needs to get done today?">
-            <button onclick="addTask()" class="px-8 py-3 bg-indigo-600 text-white rounded-2xl">Add</button>
+          <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">
+            <i class="fas fa-tasks text-indigo-500"></i> Today's Tasks
+          </h2>
+          
+          <div class="flex gap-3 mb-6">
+            <input type="text" id="taskInput" class="flex-1 px-5 py-3 rounded-2xl border border-slate-300 dark:border-slate-700" placeholder="Add a new task...">
+            <select id="prioritySelect" class="px-4 py-3 rounded-2xl border border-slate-300 dark:border-slate-700">
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="low">Low</option>
+            </select>
+            <button onclick="addTask()" class="px-8 py-3 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700">Add</button>
           </div>
-          <div id="taskList" class="space-y-3 min-h-[300px]"></div>
+
+          <div id="taskList" class="space-y-3"></div>
         </div>
       </div>
 
       <!-- Sidebar -->
       <div class="lg:col-span-4 space-y-6">
+
+        <!-- Habits -->
         <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow">
           <h2 class="text-xl font-semibold mb-4">Daily Habits</h2>
-          <div id="habitList" class="grid grid-cols-2 gap-3"></div>
+          <div id="habitList" class="grid grid-cols-1 gap-3"></div>
         </div>
 
+        <!-- Goals -->
         <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow">
-          <h2 class="text-xl font-semibold mb-4">Monthly Goals</h2>
-          <textarea id="monthlyGoals" rows="4" class="w-full p-4 rounded-2xl border" placeholder="Write your monthly goals..."></textarea>
+          <h2 class="text-xl font-semibold mb-4">Goals</h2>
+          <textarea id="monthlyGoals" rows="3" class="w-full p-4 rounded-2xl border" placeholder="Monthly Goals..."></textarea>
+          <textarea id="quarterlyGoals" rows="3" class="w-full mt-4 p-4 rounded-2xl border" placeholder="Quarterly Goals..."></textarea>
         </div>
 
+        <!-- Schedule -->
         <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow">
-          <h2 class="text-xl font-semibold mb-4">Focus Timer</h2>
-          <div id="timer" class="text-6xl font-bold text-center text-indigo-600 mb-6">25:00</div>
-          <div class="flex justify-center gap-4">
-            <button onclick="startTimer()" class="px-6 py-3 bg-emerald-600 text-white rounded-2xl">Start 25 min</button>
-            <button onclick="resetTimer()" class="px-6 py-3 bg-slate-600 text-white rounded-2xl">Reset</button>
-          </div>
+          <h2 class="text-xl font-semibold mb-4">Daily Schedule</h2>
+          <textarea id="schedule" rows="6" class="w-full p-4 rounded-2xl border" placeholder="Time blocks... e.g. 8:00 AM - Deep Work"></textarea>
+        </div>
+
+        <!-- Notes -->
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow">
+          <h2 class="text-xl font-semibold mb-4">Daily Notes & Wins</h2>
+          <textarea id="notes" rows="5" class="w-full p-4 rounded-2xl border" placeholder="What went well today?"></textarea>
         </div>
       </div>
     </div>
@@ -59,28 +75,59 @@
   <script>
     let tasks = JSON.parse(localStorage.getItem('dd_tasks') || '[]');
     let habits = JSON.parse(localStorage.getItem('dd_habits') || [
-      {name: "Exercise 30min"}, {name: "Read 20 pages"}, {name: "Drink 3L water"}
+      { id: 1, name: "Exercise 30min", completed: false },
+      { id: 2, name: "Read 20 pages", completed: false },
+      { id: 3, name: "Drink 3L water", completed: false }
     ]);
 
     function renderTasks() {
       const container = document.getElementById('taskList');
       container.innerHTML = '';
+
       tasks.forEach((task, i) => {
         const div = document.createElement('div');
-        div.className = `flex items-center gap-3 p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl`;
+        div.className = `task flex items-center gap-4 p-5 rounded-2xl bg-slate-100 dark:bg-slate-800 cursor-move ${task.priority || 'medium'}`;
+        div.draggable = true;
+        div.dataset.index = i;
         div.innerHTML = `
-          <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${i})">
+          <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${i})" class="w-6 h-6 accent-indigo-600">
           <span class="flex-1">${task.text}</span>
-          <button onclick="deleteTask(${i})" class="text-red-500">×</button>
+          <span class="text-xs px-3 py-1 rounded-full ${task.priority === 'high' ? 'bg-red-100 text-red-700' : task.priority === 'low' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">
+            ${task.priority ? task.priority.toUpperCase() : 'MED'}
+          </span>
+          <button onclick="deleteTask(${i})" class="text-red-500 text-xl">×</button>
         `;
         container.appendChild(div);
+      });
+
+      // Drag & Drop
+      container.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', e.target.dataset.index);
+      });
+      container.addEventListener('dragover', e => e.preventDefault());
+      container.addEventListener('drop', e => {
+        e.preventDefault();
+        const from = parseInt(e.dataTransfer.getData('text/plain'));
+        const to = parseInt(e.target.closest('.task').dataset.index);
+        if (from !== to) {
+          const [moved] = tasks.splice(from, 1);
+          tasks.splice(to, 0, moved);
+          localStorage.setItem('dd_tasks', JSON.stringify(tasks));
+          renderTasks();
+        }
       });
     }
 
     function addTask() {
       const input = document.getElementById('taskInput');
+      const priority = document.getElementById('prioritySelect').value;
       if (!input.value.trim()) return;
-      tasks.push({text: input.value.trim(), completed: false});
+      
+      tasks.push({
+        text: input.value.trim(),
+        completed: false,
+        priority: priority
+      });
       localStorage.setItem('dd_tasks', JSON.stringify(tasks));
       input.value = '';
       renderTasks();
@@ -103,37 +150,41 @@
       container.innerHTML = '';
       habits.forEach((habit, i) => {
         const div = document.createElement('div');
-        div.className = 'p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl text-center cursor-pointer';
-        div.textContent = habit.name;
-        div.onclick = () => alert('Habit tracked! (Full version coming soon)');
+        div.className = `p-4 rounded-2xl cursor-pointer flex items-center gap-3 ${habit.completed ? 'bg-emerald-600 text-white' : 'bg-slate-100 dark:bg-slate-800'}`;
+        div.innerHTML = `<input type="checkbox" ${habit.completed ? 'checked' : ''} class="w-5 h-5"> <span>${habit.name}</span>`;
+        div.onclick = () => {
+          habits[i].completed = !habits[i].completed;
+          localStorage.setItem('dd_habits', JSON.stringify(habits));
+          renderHabits();
+        };
         container.appendChild(div);
       });
     }
 
-    function startTimer() {
-      let time = 25*60;
-      const timerEl = document.getElementById('timer');
-      const interval = setInterval(() => {
-        time--;
-        const m = Math.floor(time/60);
-        const s = time % 60;
-        timerEl.textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
-        if (time <= 0) clearInterval(interval);
-      }, 1000);
-    }
-
-    function resetTimer() {
-      document.getElementById('timer').textContent = "25:00";
-    }
-
     function showInstallHelp() {
-      alert("Already installed!\n\nYou can now open Daily Drive from your apps.");
+      alert("✅ App is already installed!\n\nJust open 'Daily Drive' from your apps or desktop.");
     }
 
-    // Load everything
+    // Auto-save for textareas
+    function autoSave() {
+      localStorage.setItem('monthlyGoals', document.getElementById('monthlyGoals').value);
+      localStorage.setItem('quarterlyGoals', document.getElementById('quarterlyGoals').value);
+      localStorage.setItem('schedule', document.getElementById('schedule').value);
+      localStorage.setItem('notes', document.getElementById('notes').value);
+    }
+
     window.onload = () => {
+      document.getElementById('monthlyGoals').value = localStorage.getItem('monthlyGoals') || '';
+      document.getElementById('quarterlyGoals').value = localStorage.getItem('quarterlyGoals') || '';
+      document.getElementById('schedule').value = localStorage.getItem('schedule') || '';
+      document.getElementById('notes').value = localStorage.getItem('notes') || '';
+
       renderTasks();
       renderHabits();
+
+      ['monthlyGoals','quarterlyGoals','schedule','notes'].forEach(id => {
+        document.getElementById(id).addEventListener('input', autoSave);
+      });
     };
   </script>
 </body>
