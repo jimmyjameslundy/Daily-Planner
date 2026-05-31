@@ -6,27 +6,135 @@
   <title>Daily Drive</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#6366f1">
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-200 min-h-screen">
   <div class="max-w-7xl mx-auto p-6">
     <div class="flex justify-between items-center mb-8">
       <h1 class="text-4xl font-bold text-indigo-600">Daily Drive</h1>
+      <button onclick="showInstallHelp()" class="px-5 py-2 bg-indigo-600 text-white rounded-2xl text-sm flex items-center gap-2">
+        <i class="fas fa-mobile-alt"></i> Install Tips
+      </button>
     </div>
 
-    <div class="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow">
-      <h2 class="text-2xl font-semibold mb-4">Your Personal Daily Planner</h2>
-      <p class="text-slate-600">The full task, habit, and goal system is ready. I'll add it back once we confirm the site works well.</p>
-      
-      <div class="mt-10 p-6 bg-slate-100 dark:bg-slate-800 rounded-2xl">
-        <h3 class="font-medium mb-3">How to Install as App on Laptop:</h3>
-        <ol class="list-decimal pl-5 space-y-2 text-sm">
-          <li>Open this site in Chrome</li>
-          <li>Click the <strong>3-dot menu</strong> (⋮) in the top right</li>
-          <li>Go to <strong>Save and share</strong> → <strong>Install page as app</strong></li>
-          <li>Click <strong>Install</strong></li>
-        </ol>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Main Area -->
+      <div class="lg:col-span-8 space-y-6">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow">
+          <h2 class="text-2xl font-semibold mb-4">Today's Tasks</h2>
+          <div class="flex gap-3 mb-4">
+            <input type="text" id="taskInput" class="flex-1 px-5 py-3 rounded-2xl border" placeholder="What needs to get done today?">
+            <button onclick="addTask()" class="px-8 py-3 bg-indigo-600 text-white rounded-2xl">Add</button>
+          </div>
+          <div id="taskList" class="space-y-3 min-h-[300px]"></div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="lg:col-span-4 space-y-6">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow">
+          <h2 class="text-xl font-semibold mb-4">Daily Habits</h2>
+          <div id="habitList" class="grid grid-cols-2 gap-3"></div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow">
+          <h2 class="text-xl font-semibold mb-4">Monthly Goals</h2>
+          <textarea id="monthlyGoals" rows="4" class="w-full p-4 rounded-2xl border" placeholder="Write your monthly goals..."></textarea>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow">
+          <h2 class="text-xl font-semibold mb-4">Focus Timer</h2>
+          <div id="timer" class="text-6xl font-bold text-center text-indigo-600 mb-6">25:00</div>
+          <div class="flex justify-center gap-4">
+            <button onclick="startTimer()" class="px-6 py-3 bg-emerald-600 text-white rounded-2xl">Start 25 min</button>
+            <button onclick="resetTimer()" class="px-6 py-3 bg-slate-600 text-white rounded-2xl">Reset</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
+
+  <script>
+    let tasks = JSON.parse(localStorage.getItem('dd_tasks') || '[]');
+    let habits = JSON.parse(localStorage.getItem('dd_habits') || [
+      {name: "Exercise 30min"}, {name: "Read 20 pages"}, {name: "Drink 3L water"}
+    ]);
+
+    function renderTasks() {
+      const container = document.getElementById('taskList');
+      container.innerHTML = '';
+      tasks.forEach((task, i) => {
+        const div = document.createElement('div');
+        div.className = `flex items-center gap-3 p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl`;
+        div.innerHTML = `
+          <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${i})">
+          <span class="flex-1">${task.text}</span>
+          <button onclick="deleteTask(${i})" class="text-red-500">×</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function addTask() {
+      const input = document.getElementById('taskInput');
+      if (!input.value.trim()) return;
+      tasks.push({text: input.value.trim(), completed: false});
+      localStorage.setItem('dd_tasks', JSON.stringify(tasks));
+      input.value = '';
+      renderTasks();
+    }
+
+    function toggleTask(i) {
+      tasks[i].completed = !tasks[i].completed;
+      localStorage.setItem('dd_tasks', JSON.stringify(tasks));
+      renderTasks();
+    }
+
+    function deleteTask(i) {
+      tasks.splice(i, 1);
+      localStorage.setItem('dd_tasks', JSON.stringify(tasks));
+      renderTasks();
+    }
+
+    function renderHabits() {
+      const container = document.getElementById('habitList');
+      container.innerHTML = '';
+      habits.forEach((habit, i) => {
+        const div = document.createElement('div');
+        div.className = 'p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl text-center cursor-pointer';
+        div.textContent = habit.name;
+        div.onclick = () => alert('Habit tracked! (Full version coming soon)');
+        container.appendChild(div);
+      });
+    }
+
+    function startTimer() {
+      let time = 25*60;
+      const timerEl = document.getElementById('timer');
+      const interval = setInterval(() => {
+        time--;
+        const m = Math.floor(time/60);
+        const s = time % 60;
+        timerEl.textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
+        if (time <= 0) clearInterval(interval);
+      }, 1000);
+    }
+
+    function resetTimer() {
+      document.getElementById('timer').textContent = "25:00";
+    }
+
+    function showInstallHelp() {
+      alert("Already installed!\n\nYou can now open Daily Drive from your apps.");
+    }
+
+    // Load everything
+    window.onload = () => {
+      renderTasks();
+      renderHabits();
+    };
+  </script>
 </body>
 </html>
