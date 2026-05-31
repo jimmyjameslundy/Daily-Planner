@@ -26,19 +26,12 @@
       </div>
     </div>
 
-    <!-- Weekly Nav -->
-    <div class="flex justify-between items-center mb-6 bg-white dark:bg-slate-900 p-4 rounded-3xl">
-      <button onclick="prevWeek()" class="p-3"><i class="fas fa-chevron-left"></i></button>
-      <div id="weekRange" class="font-semibold"></div>
-      <button onclick="nextWeek()" class="p-3"><i class="fas fa-chevron-right"></i></button>
-    </div>
-
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-      <!-- Main Tasks -->
+      <!-- Tasks -->
       <div class="lg:col-span-8">
         <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow">
-          <h2 class="text-2xl font-semibold mb-4" id="mainTitle">Today's Tasks</h2>
+          <h2 class="text-2xl font-semibold mb-4">Today's Tasks</h2>
           
           <div class="flex gap-3 mb-6 flex-wrap">
             <input type="text" id="taskInput" class="flex-1 px-5 py-3 rounded-2xl border" placeholder="Task description">
@@ -47,15 +40,16 @@
               <option value="high">High</option>
               <option value="low">Low</option>
             </select>
-            <input type="text" id="assigneeInput" class="w-48 px-4 py-3 rounded-2xl border" placeholder="Assign to">
-            <button onclick="addTask()" class="px-8 py-3 bg-indigo-600 text-white rounded-2xl">Add Task</button>
+            <input type="text" id="assigneeInput" class="w-48 px-4 py-3 rounded-2xl border" placeholder="Assign to (Name)">
+            <input type="email" id="emailInput" class="w-56 px-4 py-3 rounded-2xl border" placeholder="Email address">
+            <button onclick="addTask()" class="px-8 py-3 bg-indigo-600 text-white rounded-2xl">Add & Assign</button>
           </div>
 
           <div id="taskList" class="space-y-3"></div>
         </div>
       </div>
 
-      <!-- Sidebar -->
+      <!-- Sidebar (same as before) -->
       <div class="lg:col-span-4 space-y-6">
         <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow">
           <h2 class="text-xl font-semibold mb-4">Daily Habits</h2>
@@ -70,94 +64,76 @@
             <button onclick="resetTimer()" class="px-8 py-3 bg-slate-600 text-white rounded-2xl">Reset</button>
           </div>
         </div>
-
-        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow">
-          <h2 class="text-xl font-semibold mb-4">Daily Schedule</h2>
-          <textarea id="schedule" rows="4" class="w-full p-4 rounded-2xl border mb-4" placeholder="Time blocks..."></textarea>
-          <h2 class="text-xl font-semibold mb-3">Notes & Wins</h2>
-          <textarea id="notes" rows="4" class="w-full p-4 rounded-2xl border" placeholder="What went well today?"></textarea>
-        </div>
       </div>
     </div>
   </div>
 
   <script>
-    let currentDate = new Date().toISOString().split('T')[0];
-    let weekStart = new Date();
-
     let tasks = JSON.parse(localStorage.getItem('dd_tasks') || '[]');
-    let habits = JSON.parse(localStorage.getItem('dd_habits') || [
-      {name: "Exercise 30min", completed: false},
-      {name: "Read 20 pages", completed: false},
-      {name: "Drink 3L water", completed: false}
-    ]);
 
-    function updateDate() {
-      document.getElementById('currentDate').textContent = new Date(currentDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    function addTask() {
+      const text = document.getElementById('taskInput').value.trim();
+      const priority = document.getElementById('prioritySelect').value;
+      const assignee = document.getElementById('assigneeInput').value.trim();
+      const email = document.getElementById('emailInput').value.trim();
+
+      if (!text) {
+        alert("Please enter a task");
+        return;
+      }
+
+      const followUp = prompt("Enter follow-up date (YYYY-MM-DD):", new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0]);
+
+      tasks.push({
+        text: text,
+        completed: false,
+        priority: priority,
+        assignee: assignee,
+        email: email,
+        followUp: followUp,
+        date: new Date().toISOString().split('T')[0],
+        alerted: false
+      });
+
+      localStorage.setItem('dd_tasks', JSON.stringify(tasks));
+
+      // Open email client if email is provided
+      if (email) {
+        const subject = encodeURIComponent(`Task Assignment: ${text}`);
+        const body = encodeURIComponent(`Hi ${assignee || ''},\n\nI've assigned you the following task:\n\n${text}\n\nFollow-up Date: ${followUp}\n\nPlease let me know when it's completed.\n\nThank you!`);
+        
+        window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+      } else if (assignee) {
+        alert(`Task assigned to ${assignee}.\n\n(No email address provided - email not opened)`);
+      }
+
+      // Clear inputs
+      document.getElementById('taskInput').value = '';
+      document.getElementById('assigneeInput').value = '';
+      document.getElementById('emailInput').value = '';
+
+      renderTasks();
     }
 
     function renderTasks() {
       const container = document.getElementById('taskList');
       container.innerHTML = '';
 
-      const filtered = tasks.filter(t => t.date === currentDate);
-
-      filtered.forEach((task, idx) => {
-        const globalIdx = tasks.findIndex(t => t === task);
+      tasks.forEach((task, i) => {
         const div = document.createElement('div');
-        div.className = `flex items-center gap-4 p-5 rounded-2xl bg-slate-100 dark:bg-slate-800 cursor-move ${task.priority || 'medium'}`;
-        div.draggable = true;
-        div.dataset.index = globalIdx;
+        div.className = `flex items-center gap-4 p-5 rounded-2xl bg-slate-100 dark:bg-slate-800`;
         div.innerHTML = `
-          <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${globalIdx})" class="w-6 h-6">
+          <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${i})" class="w-6 h-6">
           <div class="flex-1">
             <span class="${task.completed ? 'line-through text-slate-400' : ''}">${task.text}</span>
-            ${task.assignee ? `<p class="text-sm text-indigo-600">→ ${task.assignee}</p>` : ''}
+            ${task.assignee ? `<p class="text-sm text-indigo-600">Assigned to: <strong>${task.assignee}</strong></p>` : ''}
+            ${task.email ? `<p class="text-xs text-slate-500">${task.email}</p>` : ''}
             ${task.followUp ? `<p class="text-xs text-amber-600">Follow-up: ${task.followUp}</p>` : ''}
           </div>
-          <span class="text-xs px-3 py-1 rounded-full ${task.priority === 'high' ? 'bg-red-100 text-red-700' : task.priority === 'low' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">
-            ${task.priority?.toUpperCase() || 'MED'}
-          </span>
-          <button onclick="deleteTask(${globalIdx})" class="text-red-500">×</button>
+          <button onclick="deleteTask(${i})" class="text-red-500 text-xl">×</button>
         `;
         container.appendChild(div);
       });
-    }
-
-    function addTask() {
-      const text = document.getElementById('taskInput').value.trim();
-      const priority = document.getElementById('prioritySelect').value;
-      const assignee = document.getElementById('assigneeInput').value.trim();
-
-      if (!text) return;
-
-      let followUp = null;
-      if (assignee) {
-        followUp = prompt("Enter follow-up date (YYYY-MM-DD):", new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0]);
-      }
-
-      tasks.push({
-        text: text,
-        completed: false,
-        priority: priority,
-        assignee: assignee || null,
-        followUp: followUp,
-        date: currentDate,
-        alerted: false
-      });
-
-      localStorage.setItem('dd_tasks', JSON.stringify(tasks));
-
-      // Open email client if assigned
-      if (assignee) {
-        const subject = encodeURIComponent(`Task Assignment: ${text}`);
-        const body = encodeURIComponent(`Hi ${assignee},\n\nNew task assigned:\n${text}\n\nFollow-up by: ${followUp || 'TBD'}\n\nThank you!`);
-        window.location.href = `mailto:?subject=${subject}&body=${body}`;
-      }
-
-      document.getElementById('taskInput').value = '';
-      document.getElementById('assigneeInput').value = '';
-      renderTasks();
     }
 
     function toggleTask(i) {
@@ -176,39 +152,17 @@
       const today = new Date().toISOString().split('T')[0];
       tasks.forEach(task => {
         if (task.followUp === today && !task.alerted) {
-          alert(`🔔 FOLLOW-UP DUE TODAY!\n\n${task.text}\nAssigned to: ${task.assignee || 'Someone'}`);
+          alert(`🔔 FOLLOW-UP DUE TODAY!\n\n${task.text}\nAssigned to: ${task.assignee || 'Person'}`);
           task.alerted = true;
           localStorage.setItem('dd_tasks', JSON.stringify(tasks));
         }
       });
     }
 
-    // Habits, Timer, Backup, Weekly Nav functions...
-    function renderHabits() {
-      const container = document.getElementById('habitList');
-      container.innerHTML = '';
-      habits.forEach((h, i) => {
-        const div = document.createElement('div');
-        div.className = `p-4 rounded-2xl cursor-pointer flex items-center gap-3 ${h.completed ? 'bg-emerald-600 text-white' : 'bg-slate-100 dark:bg-slate-800'}`;
-        div.innerHTML = `<input type="checkbox" ${h.completed ? 'checked' : ''}> <span>${h.name}</span>`;
-        div.onclick = () => { habits[i].completed = !habits[i].completed; localStorage.setItem('dd_habits', JSON.stringify(habits)); renderHabits(); };
-        container.appendChild(div);
-      });
-    }
-
-    function startTimer() { /* same as before */ }
-    function resetTimer() { /* same */ }
-    function exportBackup() { /* same */ }
-    function importBackup() { /* same */ }
-    function prevWeek() { /* same */ }
-    function nextWeek() { /* same */ }
-
     window.onload = () => {
-      updateDate();
       renderTasks();
-      renderHabits();
       checkDueDates();
-      setInterval(checkDueDates, 300000); // Check every 5 minutes
+      setInterval(checkDueDates, 60000);
     };
   </script>
 </body>
